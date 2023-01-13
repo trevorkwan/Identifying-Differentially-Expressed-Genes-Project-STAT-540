@@ -4,7 +4,7 @@ Our team proposal can be found [here.](https://github.com/trevorkwan/Identifying
 
 Our team progress report can be found [here.](https://github.com/trevorkwan/Identifying-Differentially-Expressed-Genes-Project-STAT-540/blob/main/reports/Progress%20Report/progressreport.md)
 
-Our team presentation slides can be found [here.](https://github.com/STAT540-UBC/Repo_team_Quaranteam_2021W2/blob/master/final_presentation/Quaranteam.pdf)
+Our team presentation slides can be found [here.](https://github.com/trevorkwan/Identifying-Differentially-Expressed-Genes-Project-STAT-540/blob/main/final_presentation/Quaranteam.pdf)
 
 Project Summary:
 
