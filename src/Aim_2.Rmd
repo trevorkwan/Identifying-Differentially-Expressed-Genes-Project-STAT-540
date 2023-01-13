@@ -1,0 +1,59 @@
+---
+title: "Untitled"
+author: "Yilin Qiu"
+date: "07/04/2021"
+output: github
+_document
+---
+
+```{r}
+#load library
+library(dplyr)
+library(Seurat)
+library(patchwork)
+library(data.table)
+dt <- readRDS("Aim_3/All_Samples_Merged_Filtered.txt.gz")
+
+
+# find all markers of cluster 1
+cluster1.markers <- FindMarkers(dt, ident.1 = 2, min.pct = 0.25)
+head(cluster1.markers, n = 5)
+
+# find all markers distinguishing cluster 5 from clusters 0 and 3
+cluster5.markers <- FindMarkers(dt, ident.1 = 5, ident.2 = c(0, 3), min.pct = 0.25)
+head(cluster5.markers, n = 5)
+
+
+# find markers for every cluster compared to all remaining cells, report only the positive ones
+dt.markers <- FindAllMarkers(dt, only.pos = TRUE, min.pct = 0.25, logfc.threshold = 0.25)
+dt.markers_2 <- dt.markers %>% group_by(cluster) %>% top_n(n = 2, wt = avg_log2FC)
+
+# VlnPlot() (shows expression probability distributions across clusters)
+VlnPlot(dt, features = c("HBB", "SMAP2"))
+
+f1 <- FeaturePlot(dt, features = c("HBB", "SMAP2", "IFIT3", "IFIT2"))
+f1
+```
+
+
+
+```{r}
+f2 <- FeaturePlot(dt, features = c("S100A12", "MMP9", "IL1B", "IL1RN"))
+f2
+```
+```{r}
+#DoHeatmap() generates an expression heatmap for given cells and features. In this case, we are plotting the top 20 markers (or all markers if less than 20) for each cluster.
+top10 <- dt.markers %>% group_by(cluster) %>% top_n(n = 10, wt = avg_log2FC)
+DoHeatmap(dt, features = top10$gene) + NoLegend()
+```
+```{r}
+new.cluster.ids <- c("Neutrophils (1)", "Neutrophils (2)", "Monocytes (1)", "Macrophages (1)", "Neutrophils (3)", "Neutrophils (4)", "T cells, NK-cells", "Macrophages (2)", "Monocytes (2)", "Neutrophils (5)", "Neutrophils (6)", "Neutrophils (7)","Epithelial_cell", "B cells")
+
+names(new.cluster.ids) <- levels(dt)
+dt_2 <- RenameIdents(dt, new.cluster.ids)
+DimPlot(dt_2, reduction = "umap", label = TRUE, pt.size = 0.5) + NoLegend()
+```
+
+
+```
+

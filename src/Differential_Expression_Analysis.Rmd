@@ -1,0 +1,363 @@
+---
+title: "Differential_Expression_Analysis"
+author: "Trevor Kwan"
+date: "08/04/2021"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, message = FALSE)
+library(Seurat)
+library(patchwork)
+library(ggplot2)
+library(cowplot)
+library(tidyr)
+```
+
+## Load the Preprocessed and Merged Dataset
+
+```{r}
+# load the dataset (it has already been merged)
+# change the file path to wherever you have saved it on your computer
+dt <- readRDS("../../raw_data/All_Samples_Merged_Filtered")
+
+# neut = 0, 1, 4, 5, 9, 10, 11
+# mono = 2, 8
+# macro = 3, 7
+# T cells = 6
+# epithelial = 12
+# B cells = 13
+
+cluster_ID_list <- list(Neutrophils = c("0", "1", "4", "5", "9", "10", "11"),
+                        Monocytes = c("2", "8"), 
+                        Macrophages = c("3", "7"), 
+                        T_cells_NK_cells = "6", 
+                        Epithelial_cells = "12", 
+                        B_cells = "13")
+```
+
+## Aim 3 Objective
+Identify differentially expressed genes between male and female patients across COVID severity type (severe vs. mild. healthy) and within cell types.
+
+## Aim 4 Objective
+Identify differentially expressed genes between male and female patients across tissue type (lavage fliud vs. blood) and within cell types.
+
+## Creating Average Expression Level Plots
+`get_exp_plot` takes a specified COVID severity (Aim 3) or tissue type (Aim 4) and a cell type of interest, and plots the average expression comparing male and female.
+
+For example, get_exp_plot(COVID_severity = NA, tissue_type = "Blood", cell_type = "Neutrophils") returns a scatterplot showing the average gene expression levels comparing male and female for genes of blood tissue and genes in Neutrophils. Each plot point represents a gene and it's corresponding expression level for male and female.
+
+## Identifying Differentially Expressed Genes Across Conditions
+`get_DE_genes` takes a specified COVID severity (Aim 3) or tissue type (Aim 4) and a cell type of interest, and identifies the top differentially expressed genes across male and female (up to a maximum of 15 genes). These are the genes that change in different sex conditions for a given cell type and COVID severity, or a given cell type and tissue type.
+
+For example, get_DE_genes(COVID_severity = "Severe COVID", tissue_type = NA, cell_type = "B_cells") returns the top differentially expressed genes across male and female for genes labeled as "Severe COVID" and genes in B cells. 
+
+#### Statistical Methodology/Approach
+The FindMarkers() function is used from the Seurat package in this differential expression analysis. By default, FindMarkers() uses Wilcoxon Rank Sum tests to identify differentially expressed genes between two groups of cells. More specifically, a Wilcoxon Rank Sum test compares the expression values across male and female for each gene, for specified conditions. 
+
+For example, suppose we are interested in  gene expression of the B cells of "Severe COVID" patients comparing male and females. The Wilcoxon Rank Sum test takes the sum of the ranks of expression levels of B cells of "Severe COVID" male patients and compares that with the sum of the ranks of expression levels of B cells of "Severe COVID" female patients to see if the two samples are significantly different. 
+
+The Wilcoxon Rank Sum test has three assumptions:
+- the two samples are independent of one another
+- the two populations have equal variance or spread
+- the two populations are normally distributed
+
+We chose to use the Wilcoxon Rank Sum test over the t-test because the data we are analyzing may potentially have many outliers. 
+
+## Function Parameters for `get_DE_genes` and `get_exp_plot`
+- COVID_severity: "Severe COVID", "Mild COVID", "Healthy control", NA
+- tissue_type: "BAL", "Blood", NA
+- cell_type: "Neutrophils", "Monocytes", "Macrophages", "T_cells_NK_cells", "Epithelial_cells", "B_cells"
+
+## `get_DE_genes` Function
+
+```{r}
+# create function to identify top DE genes 
+get_DE_genes <- function(COVID_severity, tissue_type, cell_type){
+  
+  if (is.na(COVID_severity) == FALSE) {
+  # subset by clinic status
+  dt.sub <- subset(dt, clinic_status == COVID_severity)
+  }
+  
+  if (is.na(tissue_type) == FALSE) {
+  # subset by tissue type
+  dt.sub <- subset(dt, tissue == tissue_type)
+  }
+
+  # subset by cell type
+  if (cell_type == "Neutrophils") {
+    cell_ID <- 1
+  }
+  if (cell_type == "Monocytes") {
+    cell_ID <- 2
+  }
+  if (cell_type == "Macrophages") {
+    cell_ID <- 3
+  }
+  if (cell_type == "T_cells_NK_cells") {
+    cell_ID <- 4
+  }
+  if (cell_type == "Epithelial_cells") {
+    cell_ID <- 5
+  }
+  if (cell_type == "B_cells") {
+    cell_ID <- 6
+  }
+  dt.sub <- subset(dt.sub, seurat_clusters == cluster_ID_list[[cell_ID]])
+
+  # create df
+  Idents(dt.sub) <- c("male", "female")
+  avg.dt.sub <- as.data.frame(log1p(AverageExpression(dt.sub, verbose = FALSE)$RNA))
+  avg.dt.sub$gene <- rownames(avg.dt.sub)
+
+  # find DE genes
+  dt.response <- FindMarkers(dt.sub, ident.1 = "male", ident.2 = "female", verbose = FALSE)
+  dt.response <- head(dt.response, n = 15)
+  return(dt.response)
+}
+```
+
+```{r}
+# Example of get_DE_genes
+get_DE_genes(COVID_severity = "Severe COVID", tissue_type = NA, cell_type = "B_cells")
+```
+
+```{r}
+# testing the get_DE_genes function
+dt.sub <- subset(dt, clinic_status == "Severe COVID")
+# 67468 left after subset
+dt.sub <- subset(dt.sub, seurat_clusters == cluster_ID_list[[6]])
+# 119 left after subset
+Idents(dt.sub) <- c("male", "female")
+avg.dt.sub <- as.data.frame(log1p(AverageExpression(dt.sub, verbose = FALSE)$RNA))
+avg.dt.sub$gene <- rownames(avg.dt.sub)
+dt.response <- FindMarkers(dt.sub, ident.1 = "male", ident.2 = "female", verbose = FALSE)
+dt.response <- head(dt.response, n = 15)
+
+# should equal TRUE if function works
+all.equal(dt.response, get_DE_genes(COVID_severity = "Severe COVID", tissue_type = NA, cell_type = "B_cells"))
+```
+
+## `get_exp_plot` Function
+
+```{r}
+# create function to create expression plots
+get_exp_plot <- function(COVID_severity, tissue_type, cell_type){
+  
+  if (is.na(COVID_severity) == FALSE) {
+  # subset by clinic status
+  dt.sub <- subset(dt, clinic_status == COVID_severity)
+  }
+  
+  if (is.na(tissue_type) == FALSE) {
+  # subset by tissue type
+  dt.sub <- subset(dt, tissue == tissue_type)
+  }
+  
+  # subset by cell type
+  if (cell_type == "Neutrophils") {
+    cell_ID <- 1
+  }
+  if (cell_type == "Monocytes") {
+    cell_ID <- 2
+  }
+  if (cell_type == "Macrophages") {
+    cell_ID <- 3
+  }
+  if (cell_type == "T_cells_NK_cells") {
+    cell_ID <- 4
+  }
+  if (cell_type == "Epithelial_cells") {
+    cell_ID <- 5
+  }
+  if (cell_type == "B_cells") {
+    cell_ID <- 6
+  }
+  dt.sub <- subset(dt.sub, seurat_clusters == cluster_ID_list[[cell_ID]])
+
+  # create df
+  Idents(dt.sub) <- c("male", "female")
+  avg.dt.sub <- as.data.frame(log1p(AverageExpression(dt.sub, verbose = FALSE)$RNA))
+  avg.dt.sub$gene <- rownames(avg.dt.sub)
+
+  # create plot
+  if (is.na(COVID_severity) == FALSE) {
+  p <- ggplot(avg.dt.sub, aes(male, female)) + geom_point() + 
+    ggtitle(paste("Average Expression of", COVID_severity, cell_type)) +
+    labs(x = "Male", y = "Female")
+  }
+  
+  if (is.na(tissue_type) == FALSE) {
+  p <- ggplot(avg.dt.sub, aes(male, female)) + geom_point() + 
+    ggtitle(paste("Average Expression of", tissue_type, cell_type)) +
+    labs(x = "Male", y = "Female")
+  }
+
+  # find DE genes
+  dt.response <- FindMarkers(dt.sub, ident.1 = "male", ident.2 = "female", verbose = FALSE)
+  dt.response <- head(dt.response, n = 15)
+  
+  return(p)
+}
+```
+
+```{r}
+# Example of get_plot
+get_exp_plot(COVID_severity = NA, tissue_type = "Blood", cell_type = "Neutrophils")
+```
+
+```{r}
+# testing the get_plot function
+dt.sub_plot <- subset(dt, tissue == "Blood")
+# 47334 left after subset
+dt.sub_plot <- subset(dt.sub_plot, seurat_clusters == cluster_ID_list[[1]])
+# 4289 left after subset
+Idents(dt.sub_plot) <- c("male", "female")
+avg.dt.sub_plot <- as.data.frame(log1p(AverageExpression(dt.sub_plot, verbose = FALSE)$RNA))
+avg.dt.sub_plot$gene <- rownames(avg.dt.sub_plot)
+p <- ggplot(avg.dt.sub_plot, aes(male, female)) + geom_point() + 
+    ggtitle(paste("Average Expression of Blood Neutrophils")) +
+    labs(x = "Male", y = "Female")
+
+# check to see if both plots are equal
+get_exp_plot(COVID_severity = NA, tissue_type = "Blood", cell_type = "Neutrophils") + p
+```
+
+## Aim 3 DE genes
+
+Identify top male and female DE genes for T_cells_NK_cells and B_cells across COVID severity.
+
+```{r}
+get_DE_genes(COVID_severity = "Severe COVID", tissue_type = NA, cell_type = "T_cells_NK_cells")
+```
+
+```{r}
+get_DE_genes(COVID_severity = "Severe COVID", tissue_type = NA, cell_type = "B_cells")
+```
+
+```{r}
+get_DE_genes(COVID_severity = "Mild COVID", tissue_type = NA, cell_type = "T_cells_NK_cells")
+```
+
+```{r}
+get_DE_genes(COVID_severity = "Mild COVID", tissue_type = NA, cell_type = "B_cells")
+```
+
+```{r}
+get_DE_genes(COVID_severity = "Healthy control", tissue_type = NA, cell_type = "T_cells_NK_cells")
+```
+
+```{r}
+get_DE_genes(COVID_severity = "Healthy control", tissue_type = NA, cell_type = "B_cells")
+```
+
+## Aim 4 DE genes
+
+Identify top male and female DE genes for T_cells_NK_cells and B_cells across tissue type.
+
+```{r}
+get_DE_genes(COVID_severity = NA, tissue_type = "BAL", cell_type = "T_cells_NK_cells")
+```
+
+```{r}
+get_DE_genes(COVID_severity = NA, tissue_type = "BAL", cell_type = "B_cells")
+```
+
+```{r}
+get_DE_genes(COVID_severity = NA, tissue_type = "Blood", cell_type = "T_cells_NK_cells")
+```
+
+```{r}
+get_DE_genes(COVID_severity = NA, tissue_type = "Blood", cell_type = "B_cells")
+```
+
+## Aim 3 Plots
+
+Create expression plots comparing male and female average expression levels for every combination of COVID_severity and two cell types (T_cells_NK_cells or B_cells).
+
+```{r}
+get_exp_plot(COVID_severity = "Severe COVID", tissue_type = NA, cell_type = "T_cells_NK_cells")
+```
+
+```{r}
+get_exp_plot(COVID_severity = "Severe COVID", tissue_type = NA, cell_type = "B_cells")
+```
+
+```{r}
+get_exp_plot(COVID_severity = "Mild COVID", tissue_type = NA, cell_type = "T_cells_NK_cells")
+```
+
+```{r}
+get_exp_plot(COVID_severity = "Mild COVID", tissue_type = NA, cell_type = "B_cells")
+```
+
+```{r}
+get_exp_plot(COVID_severity = "Healthy control", tissue_type = NA, cell_type = "T_cells_NK_cells")
+```
+
+```{r}
+get_exp_plot(COVID_severity = "Healthy control", tissue_type = NA, cell_type = "B_cells")
+```
+
+## Aim 4 Plots
+
+Create expression plots comparing male and female average expression levels for every combination of tissue type and two cell types (T_cells_NK_cells or B_cells).
+
+```{r}
+get_exp_plot(COVID_severity = NA, tissue_type = "BAL", cell_type = "T_cells_NK_cells")
+```
+
+```{r}
+get_exp_plot(COVID_severity = NA, tissue_type = "BAL", cell_type = "B_cells")
+```
+
+```{r}
+get_exp_plot(COVID_severity = NA, tissue_type = "Blood", cell_type = "T_cells_NK_cells")
+```
+
+```{r}
+get_exp_plot(COVID_severity = NA, tissue_type = "Blood", cell_type = "B_cells")
+```
+
+## Identify DE genes for GO enrichment: Neutrophils
+
+```{r}
+get_DE_genes(COVID_severity = "Severe COVID", tissue_type = NA, cell_type = "Neutrophils")
+```
+
+```{r}
+neut_mild_df <- get_DE_genes(COVID_severity = "Mild COVID", tissue_type = NA, cell_type = "Neutrophils")
+
+# get all significant DE genes for Mild COVID and neutrophils
+# neut_mild_df %>% 
+#   rownames() %>% 
+#   as.vector()
+
+neut_mild_df
+```
+
+```{r}
+neut_healthy_df <- get_DE_genes(COVID_severity = "Healthy control", tissue_type = NA, cell_type = "Neutrophils")
+
+# get all significant DE genes for healthy control and neutrophils
+# neut_healthy_df %>% 
+#   rownames() %>% 
+#   as.vector()
+
+neut_healthy_df
+```
+
+```{r}
+get_DE_genes(COVID_severity = NA, tissue_type = "BAL", cell_type = "Neutrophils")
+```
+
+```{r}
+get_DE_genes(COVID_severity = NA, tissue_type = "Blood", cell_type = "Neutrophils")
+```
+
+## Conclusions
+
+Depending on the combination of COVID_severity, tissue_type, and cell_type, some combinations had over 15 significantly differentially expressed genes between male and female, but our analysis lists only the top 15 differentially expressed genes for each combination of conditions. Points in expression plots that deviate linearly from the rest of the points suggest the presence of differentially expressed genes. 
+
+

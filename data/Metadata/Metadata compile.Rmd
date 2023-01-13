@@ -1,0 +1,582 @@
+---
+title: "Metadat_compile"
+author: "Yilin Qiu"
+date: "15/03/2021"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+#### Loading Packages
+library(GEOquery)
+library(biomaRt)
+library(tidyverse)
+library(data.table)
+library(Matrix)
+library(dplyr)
+library(tidyr)
+library(reshape2)
+```
+
+#### download dataset from the Gene Expression Omnibus (GEO)
+```{r}
+# Download info for each sample 
+metadata <- getGEO(filename = 'GSE157344_family.soft' )
+
+
+# Select the first sample and extract the characteristics for the first sample
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762139"]]@header[["characteristics_ch1"]])
+# Split one column  into two columns
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+# Convert columns into rows
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+# Add Sample_id 
+metadata_3$sample = metadata@gsms[["GSM4762139"]]@header[["geo_accession"]]
+# Join the first sample to a black dataframe
+metadata_coml <- rbind(metadata_3)
+
+
+#####Select the second sample and extract the characteristics for the second sample. This will be repeated until the last sample has been extracted. 
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762140"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762140"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3, metadata_coml )
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762141"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762141"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3, metadata_coml )
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762142"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762142"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762143"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762143"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762144"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762144"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762145"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762145"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762146"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762146"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762147"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762147"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762148"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762148"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+
+
+```
+
+
+
+```{r}
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762149"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762149"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762150"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762150"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762151"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762151"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762152"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762152"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762153"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762153"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762155"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762155"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762156"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762156"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762157"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762157"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762158"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762158"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762159"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762159"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+```
+
+
+
+```{r}
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762160"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762160"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762161"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762161"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762162"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762162"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762163"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762163"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762164"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762164"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762165"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762165"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762166"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762166"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762167"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762167"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762168"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762168"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762169"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762169"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+```
+
+
+
+
+
+```{r}
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762170"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762170"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762171"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762171"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762172"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762172"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762173"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762173"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762174"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762174"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762175"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762175"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762177"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762177"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762178"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762178"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762179"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762179"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762180"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762180"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+```
+
+
+
+
+
+```{r}
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762181"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762181"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762182"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762182"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762183"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762183"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762184"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762184"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762185"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762185"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762186"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762186"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762187"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762187"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762188"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762188"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762189"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762189"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762190"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762190"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762191"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762191"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762192"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762192"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762193"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762193"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+
+
+metadata_2 <- data.frame(characteristic = metadata@gsms[["GSM4762194"]]@header[["characteristics_ch1"]])
+metadata_2 <- metadata_2 %>% separate(characteristic, c("x", "y"), ": ")
+metadata_3<-as.data.frame(t(metadata_2)) 
+names(metadata_3)<- metadata_3[1,]
+metadata_3 <- metadata_3[-1,]
+metadata_3$sample = metadata@gsms[["GSM4762194"]]@header[["geo_accession"]]
+metadata_coml <- rbind(metadata_3,  metadata_coml)
+
+
+metadata_comlete <- rbind(metadata_coml)
+str(metadata_comlete)
+write.csv(metadata_comlete, "metadata_comlete.csv")
+
+```
+

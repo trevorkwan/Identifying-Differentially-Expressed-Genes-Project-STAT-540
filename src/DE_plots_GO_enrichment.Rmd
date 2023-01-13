@@ -1,0 +1,141 @@
+---
+title: "DE violin plots"
+author: "Madeline Iseminger"
+date: "06/04/2021"
+output: github_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+# clear global workspace
+rm(list=ls())
+
+# load packages
+library(Seurat)
+library(patchwork)
+library(ggplot2)
+library(cowplot)
+library(dplyr)
+library(enrichR) # for GO analysis
+
+# SET UP MULTI-CORES
+#no_cores <- availableCores() - 1
+#future::plan(multisession, workers = no_cores)
+```
+
+## R Markdown
+Goal: Differential Expression between female/male patients: control vs mild vs severe
+
+Run using Ubuntu 20.04, R 4.0.5, RStudio Version 1.4.1103.  To install Seurat:
+
+```{r eval=FALSE}
+install.packages("Seurat")
+```
+
+Load the binary datafile of filtered and integrated data.
+```{r}
+myobj <- readRDS("~/Desktop/AllSamplesMergedFiltered/AllSamplesMergedFiltered")
+```
+
+Prepare cluster ID to cell type conversion, search for genes of interest that are available in this dataset:
+```{r}
+# get conversion for cluster names and cell types (this is from Trevor's code)
+cluster_ID_list <- list(Neutrophils = c("0", "1", "4", "5", "9", "10", "11"),
+                        Monocytes = c("2", "8"), 
+                        Macrophages = c("3", "7"), 
+                        T_cells_NK_cells = "6", 
+                        Epithelial_cells = "12", 
+                        B_cells = "13")
+
+# to call cluster labels, use code like: cluster_ID_list["Neutrophils"] or cluster_ID_list$Neutrophils
+
+# merge clusters with the same cell type by renaming clusters
+new.cluster.ids <- c("Neutrophils", "Neutrophils", "Monocytes", "Macrophages", "Neutrophils", "Neutrophils", "T_cells_NK_cells", "Macrophages", "Monocytes", "Neutrophils", "Neutrophils", "Neutrophils", "Epithelial_cells", "B_cells")
+names(new.cluster.ids) <- levels(myobj)
+myobj <- RenameIdents(myobj, new.cluster.ids)
+```
+
+Find names of genes of interest present in the data.  Genes that would be interesting to search for include:
+
+- ACE2: present are "BACE2" "ACE2" 
+- IFIT2
+- IFIT3
+- IL18: present are "IL18R1"  "IL18RAP" "IL18BP"  "IL18"
+- TLR3 and TLR7: endosomal RNA receptors that recognize SARS-CoV-2 RNA and begin the immune response cascade
+- IFN genes: type I interferons with antiviral effects; from https://pubmed.ncbi.nlm.nih.gov/33071044/, type I IFN (IFN-I) should be more highly expressed in females. Present genes containing "IFN" are "IFNGR1" "IFNAR2" "IFNAR1" "IFNGR2" "IFNLR1" "IFNG" "IFNG-AS1" "IFNL1"
+- viral genes if present in the data
+- cytokines lumped together
+
+```{r}
+# get list of gene names over all samples and cell types
+gene_names <- rownames(myobj@assays$RNA@counts)
+
+# check if a gene is present in the data
+gene = "IFN" # string to search for in array of gene names
+gene_names[grep(gene, gene_names)] # prints a list of gene names containing that string
+```
+
+Subset the Seurat object by disease severity and sample type for plotting later:
+```{r eval=FALSE}
+# myobj$clinic_status == "Severe COVID" # this makes a mask of True/False
+
+# severe is commented out because my computer breaks on it
+#myobj.severe <- subset(myobj, clinic_status == "Severe COVID")
+myobj.mild <- subset(myobj, clinic_status == "Mild COVID")
+myobj.healthy <- subset(myobj, clinic_status == "Healthy control")
+
+# myobj.BAL <- subset(myobj, tissue == "BAL")
+# myobj.blood <- subset(myobj, tissue == "Blood")
+```
+
+Make violin plots for individual genes:
+```{r}
+# all individuals: genes split by sex, all cell types
+VlnPlot(myobj, features = c("IFIT2", "IFIT3"), split.by = "sex", combine = FALSE)
+
+# mild disease: genes split by sex, all cell types
+plots <- VlnPlot(myobj.mild, features = c("IFIT2", "IFIT3"), split.by = "sex", 
+    pt.size = 0.5, combine = FALSE)
+
+# show plots in .md file
+plots
+```
+
+Plot proportion of cell type in different sample types:
+```{r}
+# get proportion of cells per cluster in object
+overall <- prop.table(table(Idents(myobj)))
+
+# plot bar graph of proportion of total cells from each cluster by sex (BAL only)
+barplot(overall, main="Total Cells", ylab="Proportion of cells", xlab="Cell Type", las=2)
+
+# get average expression for each gene per cluster
+cluster.averages <- AverageExpression(myobj)
+```
+
+## GO enrichment analysis from a list of genes
+
+Fetch GO terms for selected genes and plot them with their functions.
+
+```{r}
+# select database
+setEnrichrSite("Enrichr") # human genes
+websiteLive <- TRUE
+# list available databases
+dbs <- listEnrichrDbs()
+
+# list of genes to query
+geneList <- c("IFIT2", "IFIT3")
+
+# query database
+dbs <- c("GO_Molecular_Function_2015", "GO_Cellular_Component_2015", "GO_Biological_Process_2015")
+if (websiteLive) {
+    enriched <- enrichr(geneList, dbs)
+}
+
+#view results table
+if (websiteLive) enriched[["GO_Biological_Process_2015"]]
+
+if (websiteLive) plotEnrich(enriched[[3]], showTerms = 20, numChar = 40, y = "Count", orderBy = "P.value")
+```

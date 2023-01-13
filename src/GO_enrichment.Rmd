@@ -1,0 +1,139 @@
+---
+title: "GO Analysis"
+author: "Madeline Iseminger (38390134)"
+date: "09/04/2021"
+output: github_document
+---
+
+This script finds the genes that are differentially expressed between male and female individuals and runs GO analysis on those genes.  Neutrophils across disease severities and sample types are included here, but any combination could be used with get_DE_genes() from Trevor's script (copied here).
+
+## Setup and load expression data
+
+Run using Ubuntu 20.04, R 4.0.5, RStudio Version 1.4.1103.
+
+```{r setup, include=FALSE}
+rm(list = ls()) # clear environment to make room for things
+
+knitr::opts_chunk$set(echo = TRUE)
+library(Seurat)
+library(patchwork)
+library(ggplot2)
+library(cowplot)
+library(tidyr)
+library(enrichR)
+```
+
+Load the binary datafile of filtered and integrated data.
+```{r}
+dt <- readRDS("~/Desktop/AllSamplesMergedFiltered/AllSamplesMergedFiltered")
+```
+
+## Get DE genes
+This section is from Trevor's script.
+
+# list cluster ID to cell type conversions
+```{r}
+cluster_ID_list <- list(Neutrophils = c("0", "1", "4", "5", "9", "10", "11"),
+                        Monocytes = c("2", "8"), 
+                        Macrophages = c("3", "7"), 
+                        T_cells_NK_cells = "6", 
+                        Epithelial_cells = "12", 
+                        B_cells = "13")
+```
+# create function to identify top DE genes 
+```{r}
+get_DE_genes <- function(COVID_severity, tissue_type, cell_type){
+  
+  if (is.na(COVID_severity) == FALSE) {
+  # subset by clinic status
+  dt.sub <- subset(dt, clinic_status == COVID_severity)
+  }
+  
+  if (is.na(tissue_type) == FALSE) {
+  # subset by tissue type
+  dt.sub <- subset(dt, tissue == tissue_type)
+  }
+  # subset by cell type
+  if (cell_type == "Neutrophils") {
+    cell_ID <- 1
+  }
+  if (cell_type == "Monocytes") {
+    cell_ID <- 2
+  }
+  if (cell_type == "Macrophages") {
+    cell_ID <- 3
+  }
+  if (cell_type == "T_cells_NK_cells") {
+    cell_ID <- 4
+  }
+  if (cell_type == "Epithelial_cells") {
+    cell_ID <- 5
+  }
+  if (cell_type == "B_cells") {
+    cell_ID <- 6
+  }
+  dt.sub <- subset(dt.sub, seurat_clusters == cluster_ID_list[[cell_ID]])
+  # create df
+  Idents(dt.sub) <- c("male", "female")
+  avg.dt.sub <- as.data.frame(log1p(AverageExpression(dt.sub, verbose = FALSE)$RNA))
+  avg.dt.sub$gene <- rownames(avg.dt.sub)
+  # find DE genes
+  dt.response <- FindMarkers(dt.sub, ident.1 = "male", ident.2 = "female", verbose = FALSE)
+  # dt.response <- head(dt.response, n = 15)
+  return(dt.response)
+}
+```
+
+## Identify DE genes for GO enrichment: Neutrophils
+
+# get all significant DE genes for mild COVID and neutrophils
+```{r}
+neut_mild_df <- get_DE_genes(COVID_severity = "Mild COVID", tissue_type = NA, cell_type = "Neutrophils")
+neut_mild_genes <- neut_mild_df %>% 
+  rownames() %>% 
+  as.vector()
+```
+
+# get all significant DE genes for healthy controls and neutrophils
+```{r}
+neut_healthy_df <- get_DE_genes(COVID_severity = "Healthy control", tissue_type = NA, cell_type = "Neutrophils")
+neut_healthy_genes <- neut_healthy_df %>% 
+  rownames() %>% 
+  as.vector()
+```
+
+## GO enrichment analysis from a list of genes
+
+Fetch GO terms for selected genes and plot them with their functions.
+
+```{r}
+# select database
+setEnrichrSite("Enrichr") # human genes
+websiteLive <- TRUE
+# list available databases
+dbs <- listEnrichrDbs()
+```
+
+Get the list of genes to query:
+```{r}
+# list of genes to query
+#geneList <- neut_healthy_genes # healthy, neutrophils
+#geneList <- neut_mild_genes # mild, neutrophils
+#geneList <- c("MT2A", "SERPINB9", "HBB", "HBA2") # severe, neutrophils
+geneList <- c("IFNGR2", "INSIG1", "SERPINB9", "HBB") # BAL, neutrophils
+```
+
+Query GO and make a plot:
+```{r}
+# query database
+dbs <- c("GO_Molecular_Function_2015", "GO_Cellular_Component_2015", "GO_Biological_Process_2015")
+if (websiteLive) {
+    enriched <- enrichr(geneList, dbs)
+}
+
+# view results table
+if (websiteLive) enriched[["GO_Biological_Process_2015"]]
+
+# make plot
+if (websiteLive) plotEnrich(enriched[[3]], showTerms = 20, numChar = 40, y = "Count", orderBy = "P.value")
+```

@@ -1,0 +1,163 @@
+---
+title: "DE violin plots"
+author: "Madeline Iseminger"
+date: "06/04/2021"
+output: github_document
+---
+# Set up libraries
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE)
+
+# load packages
+library(Seurat)
+library(patchwork)
+library(ggplot2)
+library(cowplot)
+library(dplyr)
+```
+Run using Ubuntu 20.04, R 4.0.5, RStudio Version 1.4.1103. 
+
+# Load data, name clusters by cell type, and create subsets
+
+Load the binary datafile of filtered and integrated data.
+```{r}
+dt <- readRDS("~/Desktop/AllSamplesMergedFiltered/AllSamplesMergedFiltered")
+```
+
+Prepare cluster ID to cell type conversion:
+```{r}
+# get conversion for cluster names and cell types (this is from Trevor's code)
+cluster_ID_list <- list(Neutrophils = c("0", "1", "4", "5", "9", "10", "11"),
+                        Monocytes = c("2", "8"), 
+                        Macrophages = c("3", "7"), 
+                        T_cells_NK_cells = "6", 
+                        Epithelial_cells = "12", 
+                        B_cells = "13")
+
+# to call cluster labels, use code like: cluster_ID_list["Neutrophils"] or cluster_ID_list$Neutrophils
+
+# merge clusters with the same cell type by renaming clusters
+new.cluster.ids <- c("Neutrophils", "Neutrophils", "Monocytes", "Macrophages", "Neutrophils", "Neutrophils", "T_cells_NK_cells", "Macrophages", "Monocytes", "Neutrophils", "Neutrophils", "Neutrophils", "Epithelial_cells", "B_cells")
+names(new.cluster.ids) <- levels(dt)
+nameddt <- RenameIdents(dt, new.cluster.ids) #this is the dt but with names clustered
+```
+
+Function to subset the Seurat object (this chunk from Trevor's code):
+
+```{r}
+# create function to subset the Seurat object 
+subsetdt <- function(COVID_severity, tissue_type, cell_type){
+  
+  if (is.na(COVID_severity) == FALSE) {
+  # subset by clinic status
+  dt.sub <- subset(dt, clinic_status == COVID_severity)
+  }
+  
+  if (is.na(tissue_type) == FALSE) {
+  # subset by tissue type
+  dt.sub <- subset(dt, tissue == tissue_type)
+  }
+  # subset by cell type
+  if (cell_type == "Neutrophils") {
+    cell_ID <- 1
+  }
+  if (cell_type == "Monocytes") {
+    cell_ID <- 2
+  }
+  if (cell_type == "Macrophages") {
+    cell_ID <- 3
+  }
+  if (cell_type == "T_cells_NK_cells") {
+    cell_ID <- 4
+  }
+  if (cell_type == "Epithelial_cells") {
+    cell_ID <- 5
+  }
+  if (cell_type == "B_cells") {
+    cell_ID <- 6
+  }
+  dt.sub <- subset(dt.sub, seurat_clusters == cluster_ID_list[[cell_ID]])
+  # create df
+  Idents(dt.sub) <- c("male", "female")
+  return(dt.sub)
+}
+```
+
+  
+Subset the Seurat object by disease severity and sample type for plotting later:
+```{r eval=FALSE}
+#mild disease, B cells
+mildBcell <- subsetdt(COVID_severity = "Mild COVID", tissue_type = NA, cell_type = "B_cells")
+
+#mild disease, epithelial cells
+mildepicell <- subsetdt(COVID_severity = "Mild COVID", tissue_type = NA, cell_type = "Epithelial_cells")
+
+#mild disease, monocytes
+mildMono <- subsetdt(COVID_severity = "Mild COVID", tissue_type = NA, cell_type = "Monocytes")
+
+#mild severity, clusters 0-13 to work with Trevor's subset() function
+mild <- subset(dt, clinic_status == "Mild COVID")
+
+#mild severity, clusters grouped by name
+namedmild <- subset(nameddt, clinic_status == "Mild COVID")
+```
+
+# Find genes to test
+
+Find names of genes of interest present in the data.  Genes that would be interesting to search for include:
+
+- ACE2: present are "BACE2" "ACE2" 
+- IFIT2
+- IFIT3
+- IL18: present are "IL18R1"  "IL18RAP" "IL18BP"  "IL18"
+- TLR3 and TLR7: endosomal RNA receptors that recognize SARS-CoV-2 RNA and begin the immune response cascade
+- IFN genes: type I interferons with antiviral effects; from https://pubmed.ncbi.nlm.nih.gov/33071044/, type I IFN (IFN-I) should be more highly expressed in females. Present genes containing "IFN" are "IFNGR1" "IFNAR2" "IFNAR1" "IFNGR2" "IFNLR1" "IFNG" "IFNG-AS1" "IFNL1"
+
+```{r}
+# get list of gene names over all samples and cell types
+gene_names <- rownames(dt@assays$RNA@counts)
+
+# check if a gene is present in the data
+gene = "IFN" # string to search for in array of gene names
+gene_names[grep("CD200R", gene_names)] # prints a list of gene names containing that string
+```
+
+# Make plots 
+Make violin plots for individual genes:
+```{r}
+# ACE2 in B cells, mild disease
+VlnPlot(mildBcell, features = c("ACE2"))
+VlnPlot(mildBcell, features = c("IFIT2"))
+
+# ACE2 with cell type names
+VlnPlot(nameddt, features = c("ACE2"), split.by = "sex")
+
+# ACE2 with cell type names, mild disease only
+VlnPlot(namedmild, features = c("ACE2"), split.by = "sex")
+VlnPlot(namedmild, features = c("IFIT2"), split.by = "sex")
+VlnPlot(namedmild, features = c("CD200R1"), split.by = "sex")
+VlnPlot(namedmild, features = c("TLR3", "TLR7"), split.by = "sex", combine = FALSE)
+VlnPlot(namedmild, features = c("IL18"), split.by = "sex")
+
+# mild disease, monocytes
+VlnPlot(mildMono, features = c("CD200R1"))
+VlnPlot(mildMono, features = c("TLR3", "TLR7"), split.by = "sex", combine = FALSE)
+```
+# Sample composition by cell type
+Plot proportion of cell type in different sample types:
+```{r}
+# get proportion of cells per cluster in object
+overall <- prop.table(table(Idents(nameddt)))
+
+# plot bar graph of proportion of total cells from each cluster by sex (BAL only)
+barplot(overall, main="Total Cells", ylab="Proportion of cells", xlab="Cell Type", las=2, main = "All Cells")
+
+# get proportion of cells per cluster in object
+mildtable <- prop.table(table(Idents(namedmild)))
+
+# plot bar graph of proportion of total cells from each cluster by sex (BAL only)
+barplot(mildtable, main="Total Cells", ylab="Proportion of cells", xlab="Cell Type", las=2, main = "Mild COVID")
+# get average expression for each gene per cluster
+cluster.averages <- AverageExpression(dt)
+```

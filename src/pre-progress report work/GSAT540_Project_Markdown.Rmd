@@ -1,0 +1,31 @@
+---
+title: "GSAT540_Project_Markdown"
+author: "Quaranteam"
+date: "17/03/2021"
+output: github_document
+---
+Download the 'GSE166992_RAW.tar' dataset from: https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE166992
+
+Decompress the file and there are a bunch of gz files within.
+
+I think each patient has three files attached: a matrix file, a features file, and a barcodes file. Each need to be loaded together when you use the read10X command.
+
+```{r}
+jackson_path <- '~/Documents/Measday_Lab/Masters/Courses/GSAT540/Repo_team_Quaranteam_2021W2/GSE166992_RAW/' 
+
+library(RCurl)
+library(tidyverse)
+library(edgeR)
+library(scater)
+library(scran)
+
+
+options(digits = 3) #Not sure what this does
+dge <- read10X(
+  mtx = 'GSM5090446_IVAR2_5DGE_matrix.mtx.gz',
+  genes = 'GSM5090446_IVAR2_5DGE_features.tsv.gz',
+  barcodes = 'GSM5090446_IVAR2_5DGE_barcodes.tsv.gz',
+  DGEList = TRUE,
+  path = jackson_path) #Change to the file location on your computer
+```
+

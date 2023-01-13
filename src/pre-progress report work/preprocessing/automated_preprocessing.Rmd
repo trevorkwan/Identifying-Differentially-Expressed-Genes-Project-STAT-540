@@ -1,0 +1,57 @@
+---
+title: "automated_preprocessing"
+author: "Trevor Kwan"
+date: "19/03/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+
+```{r}
+library(Seurat)
+library(dplyr)
+library(patchwork)
+library(metap)
+library(multtest)
+```
+
+```{r}
+# takes in the BAL_number to process, and returns filtered and normalized BAL object
+# need to set up BAL files in their BAL folders first
+filter_normalize <- function(BAL_number){
+  
+  # load the data
+  BAL.data <- Read10X(data.dir = paste(".././data/BAL",as.character(BAL_number), "/", sep = ""))
+  BAL <- CreateSeuratObject(counts = BAL.data, project = "BAL", min.cells = 3, min.features = 200)
+  BAL$var <- paste("BAL", as.character(BAL_number), sep = "")
+
+  # filtering
+  BAL[["percent.mt"]] <- PercentageFeatureSet(BAL, pattern = "^MT-")
+  BAL <- subset(BAL, subset = nFeature_RNA > 200 & nFeature_RNA < 2500 & percent.mt < 5)
+  
+  # normalize the data
+  BAL <- NormalizeData(BAL, normalization.method = "LogNormalize", scale.factor = 10000)
+  
+  return(BAL)
+}
+```
+
+```{r}
+# example to filter and normalize BAL3 data sample
+BAL3 <- filter_normalize(3)
+
+# feature selection (identifying highly variable features/genes)
+BAL3 <- FindVariableFeatures(BAL3, selection.method = "vst", nfeatures = 2000)
+
+# identify the 10 most highly variable genes
+top10 <- head(VariableFeatures(BAL3), 10)
+
+# plot variable features with and without labels
+plot1 <- VariableFeaturePlot(BAL3)
+plot2 <- LabelPoints(plot = plot1, points = top10, repel = TRUE)
+plot1
+plot2
+```

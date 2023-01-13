@@ -1,0 +1,138 @@
+---
+title: "Untitled"
+author: "Trevor Kwan"
+date: "07/04/2021"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+library(Seurat)
+library(patchwork)
+library(ggplot2)
+library(cowplot)
+```
+
+```{r}
+# load the dataset (it has already been merged)
+dt <- readRDS("Aim_4/All_Samples_Merged_Filtered")
+
+# Visualization
+p1 <- DimPlot(dt, reduction = "umap", group.by = "tissue")
+p2 <- DimPlot(dt, reduction = "umap", label = TRUE, repel = TRUE)
+p1 + p2
+```
+
+# DE Aim 4 not by cluster
+
+```{r}
+dt@meta.data
+
+# subset the data into tissue type
+dt.BAL <- subset(dt, tissue == "BAL")
+dt.blood <- subset(dt.list, tissue == "Blood")
+
+# create BAL df
+Idents(dt.BAL) <- c("male", "female")
+avg.dt.BAL <- as.data.frame(log1p(AverageExpression(dt.BAL, verbose = FALSE)$RNA))
+avg.dt.BAL$gene <- rownames(avg.dt.BAL)
+
+# create Blood df
+Idents(dt.blood) <- c("male", "female")
+avg.dt.blood <- as.data.frame(log1p(AverageExpression(dt.blood, verbose = FALSE)$RNA))
+avg.dt.blood$gene <- rownames(avg.dt.blood)
+
+# plot 
+p1 <- ggplot(avg.dt.BAL, aes(male, female)) + geom_point() + ggtitle("BAL")
+p2 <- ggplot(avg.dt.blood, aes(male, female)) + geom_point() + ggtitle("Blood")
+p1 + p2
+```
+```{r}
+# find DE genes for BAL
+BAL.response <- FindMarkers(dt.BAL, ident.1 = "male", ident.2 = "female", verbose = FALSE)
+head(BAL.response, n = 15)
+
+# find DE genes for Blood
+blood.response <- FindMarkers(dt.blood, ident.1 = "male", ident.2 = "female", verbose = FALSE)
+head(blood.response, n = 15)
+```
+
+## DE by cell clusters
+
+```{r}
+dt.BAL@meta.data$seurat_clusters %>% 
+  unique()
+
+dt@meta.data
+
+# subset the data into tissue type and cluster type
+dt.BAL <- subset(dt, tissue == "BAL")
+dt.BAL.0 <- subset(dt.BAL, seurat_clusters == "0")
+
+dt.blood <- subset(dt, tissue == "Blood")
+dt.blood.0 <- subset(dt.blood, seurat_clusters == "0")
+
+# create BAL.0 df
+Idents(dt.BAL.0) <- c("male", "female")
+avg.dt.BAL.0 <- as.data.frame(log1p(AverageExpression(dt.BAL.0, verbose = FALSE)$RNA))
+avg.dt.BAL.0$gene <- rownames(avg.dt.BAL.0)
+
+# plot
+p1 <- ggplot(avg.dt.BAL.0, aes(male, female)) + geom_point() + ggtitle("BAL")
+p1
+
+# find DE genes for BAL.0
+BAL.0.response <- FindMarkers(dt.BAL.0, ident.1 = "male", ident.2 = "female", verbose = FALSE)
+head(BAL.0.response, n = 15)
+```
+
+# Aim 3
+
+```{r}
+# subset data into covid severity type
+dt@meta.data$clinic_status %>% 
+  unique()
+
+dt.severe <- subset(dt, clinic_status == "Severe COVID")
+dt.mild <- subset(dt, clinic_status == "Mild COVID")
+dt.healthy <- subset(dt, clinic_status == "Healthy control")
+
+# create severe df
+Idents(dt.severe) <- c("male", "female")
+avg.dt.severe <- as.data.frame(log1p(AverageExpression(dt.severe, verbose = FALSE)$RNA))
+avg.dt.severe$gene <- rownames(avg.dt.severe)
+
+# create mild df
+Idents(dt.mild) <- c("male", "female")
+avg.dt.mild <- as.data.frame(log1p(AverageExpression(dt.mild, verbose = FALSE)$RNA))
+avg.dt.mild$gene <- rownames(avg.dt.mild)
+
+# create healthy df
+Idents(dt.healthy) <- c("male", "female")
+avg.dt.healthy <- as.data.frame(log1p(AverageExpression(dt.healthy, verbose = FALSE)$RNA))
+avg.dt.healthy$gene <- rownames(avg.dt.healthy)
+
+# plot
+p1 <- ggplot(avg.dt.severe, aes(male, female)) + geom_point() + ggtitle("Severe")
+p2 <- ggplot(avg.dt.mild, aes(male, female)) + geom_point() + ggtitle("Mild")
+p3 <- ggplot(avg.dt.healthy, aes(male, female)) + geom_point() + ggtitle("Healthy")
+p1 + p2 + p3
+```
+
+
+```{r}
+# find DE genes for severe
+severe.response <- FindMarkers(dt.severe, ident.1 = "male", ident.2 = "female", verbose = FALSE)
+head(severe.response, n = 15)
+
+# find DE genes for mild
+mild.response <- FindMarkers(dt.mild, ident.1 = "male", ident.2 = "female", verbose = FALSE)
+head(mild.response, n = 15)
+
+# find DE genes for healthy
+healthy.response <- FindMarkers(dt.healthy, ident.1 = "male", ident.2 = "female", verbose = FALSE)
+head(healthy.response, n = 15)
+```
+
+
+
