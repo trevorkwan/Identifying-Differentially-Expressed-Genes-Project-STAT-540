@@ -1,6 +1,6 @@
 This is the team repository of Team Quaranteam.
 
-Our team proposal can be found [here.](https://github.com/STAT540-UBC/Repo_team_Quaranteam_2021W2/blob/master/Proposal/project_proposal.md)
+Our team proposal can be found [here.](https://github.com/trevorkwan/Identifying-Differentially-Expressed-Genes-Project-STAT-540/blob/main/reports/Proposal/project_proposal.md)
 
 Our team progress report can be found [here.](https://github.com/STAT540-UBC/Repo_team_Quaranteam_2021W2/blob/master/reports/Progress%20Report/progressreport.md)
 
